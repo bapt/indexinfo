@@ -129,7 +129,7 @@ parse_info_dir(int fd)
 	const char *ext;
 	int ffd;
 
-	if ((d = fdopendir(fd)) == NULL)
+	if ((d = fdopendir(dup(fd))) == NULL)
 		err(EXIT_FAILURE, "Impossible to open directory");
 
 	while ((dp = readdir(d)) != NULL) {
@@ -149,7 +149,7 @@ parse_info_dir(int fd)
 		close (ffd);
 	}
 
-	fdclosedir(d);
+	closedir(d);
 }
 
 static void
