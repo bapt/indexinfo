@@ -1,0 +1,3 @@
+# indexinfo
+
+Small BSD-2 license utility to generated GNU info page index file
