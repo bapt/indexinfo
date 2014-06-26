@@ -49,7 +49,7 @@ struct section **sections = NULL;
 size_t sectioncap = 0;
 ssize_t sectionlen = 0;
 
-void
+static void
 parse_info_file(int fd)
 {
 	FILE *fp;
@@ -121,7 +121,7 @@ parse_info_file(int fd)
 	return;
 }
 
-void
+static void
 parse_info_dir(int fd)
 {
 	DIR *d;
@@ -152,7 +152,7 @@ parse_info_dir(int fd)
 	fdclosedir(d);
 }
 
-void
+static void
 print_section(struct section *s, int fd)
 {
 	int i;
@@ -172,7 +172,7 @@ const char msg[] = ""
 "  \"h\" gives a primer for first-timers,\n"
 "  \"mXXX<Return>\" visits the XXX manual, etc.\n";
 
-void
+static void
 generate_index(fd)
 {
 	int i;
