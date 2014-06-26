@@ -54,6 +54,7 @@ parse_info_file(int fd)
 {
 	FILE *fp;
 	char *line = NULL;
+	const char *walk;
 	size_t linecap = 0;
 	ssize_t linelen;
 	struct section *s = NULL;
@@ -74,21 +75,22 @@ parse_info_file(int fd)
 
 		if (strncmp(line, "INFO-DIR-SECTION ", 17) == 0) {
 			s = NULL;
-			line+=17;
-			while (isspace(*line))
-				line++;
+			walk = line;
+			walk+=17;
+			while (isspace(*walk))
+				walk++;
 			for (i = 0; i < sectionlen; i++) {
-				if (strcmp(line, sections[i]->name) == 0) {
+				if (strcmp(walk, sections[i]->name) == 0) {
 					s = sections[i];
 				}
 			}
 
 			if (s == NULL) {
 				s = calloc(1, sizeof(struct section));
-				s->name = strdup(line);
+				s->name = strdup(walk);
 
 				if (sectionlen + 1 > sectioncap) {
-					sectioncap += 10;
+					sectioncap += 100;
 					sections = reallocf(sections, sectioncap * sizeof(struct sections **));
 				}
 
@@ -96,15 +98,17 @@ parse_info_file(int fd)
 			}
 		}
 
-		if (strcmp(line, "START-INFO-DIR-ENTRY") == 0)
+		if (strcmp(line, "START-INFO-DIR-ENTRY") == 0) {
 			entries = true;
+		}
 
-		if (strcmp(line, "END-INFO-DIR-ENTRY") == 0)
+		if (strcmp(line, "END-INFO-DIR-ENTRY") == 0) {
 			entries = false;
+		}
 
 		if (entries && *line == '*' && s != NULL) {
 			if (s->entrieslen + 1 > s->entriescap) {
-				s->entriescap += 10;
+				s->entriescap += 100;
 				s->entries = reallocf(s->entries, s->entriescap * sizeof(char **));
 			}
 			s->entries[s->entrieslen++] = strdup(line);
@@ -112,6 +116,7 @@ parse_info_file(int fd)
 	}
 
 	free(line);
+	fclose(fp);
 
 	return;
 }
