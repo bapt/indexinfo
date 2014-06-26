@@ -169,10 +169,12 @@ generate_index(fd)
 	int i, j;
 	int ffd;
 
-	if (sectionlen == 0)
-		unlinkat(fd, "dir", 0);
+	unlinkat(fd, "dir", 0);
 
-	if ((ffd = openat(fd, "dir", O_WRONLY|O_CREAT)) == -1)
+	if (sectionlen == 0)
+		return;
+
+	if ((ffd = openat(fd, "dir", O_WRONLY|O_CREAT, 0644)) == -1)
 		err(EXIT_FAILURE, "Imporssible to write the index file");
 
 	dprintf(ffd, "Produced by: "PACKAGE_NAME" "PACKAGE_VERSION".\n");
