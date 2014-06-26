@@ -153,8 +153,12 @@ print_section(struct section *s, int fd)
 	int i;
 	
 	dprintf(fd, "\n%s\n", s->name);
-	for (i = 0; i < s->entrieslen; i++)
+	for (i = 0; i < s->entrieslen; i++) {
 		dprintf(fd, "%s\n", s->entries[i]);
+		free(s->entries[i]);
+	}
+	free(s->entries);
+	free(s->name);
 }
 
 const char msg[] = ""
@@ -166,7 +170,7 @@ const char msg[] = ""
 void
 generate_index(fd)
 {
-	int i, j;
+	int i;
 	int ffd;
 
 	unlinkat(fd, "dir", 0);
@@ -182,8 +186,11 @@ generate_index(fd)
 	dprintf(ffd, "%s\n", msg);
 
 	dprintf(ffd, "* Menu:\n");
-	for (i = 0; i < sectionlen; i++)
+	for (i = 0; i < sectionlen; i++) {
 		print_section(sections[i], ffd);
+		free(sections[i]);
+	}
+	free(sections);
 
 	close(ffd);
 }
