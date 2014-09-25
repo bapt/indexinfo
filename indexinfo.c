@@ -206,7 +206,7 @@ main(int argc, char **argv)
 	int fd;
 
 	if (argc != 2)
-		errx(EXIT_FAILURE, "Usage: indexinfo <infofilesdirectori>");
+		errx(EXIT_FAILURE, "Usage: indexinfo <infofilesdirectory>");
 
 	if ((fd = open(argv[1], O_RDONLY|O_DIRECTORY)) == -1)
 		err(EXIT_FAILURE, "Impossible to open %s", argv[1]);
