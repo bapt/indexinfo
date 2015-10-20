@@ -184,7 +184,7 @@ generate_index(fd)
 		return;
 
 	if ((ffd = openat(fd, "dir", O_WRONLY|O_CREAT, 0644)) == -1)
-		err(EXIT_FAILURE, "Imporssible to write the index file");
+		err(EXIT_FAILURE, "Impossible to write the index file");
 
 	dprintf(ffd, "Produced by: "PACKAGE_NAME" "PACKAGE_VERSION".\n");
 	dprintf(ffd, "\037\nFile: dir,	Node: Top	This is the top of the INFO tree\n\n");
