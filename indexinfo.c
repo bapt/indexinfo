@@ -26,6 +26,10 @@
 
 #include <sys/types.h>
 
+#ifdef HAVE_CAPSICUM
+#include <sys/capability.h>
+#endif
+
 #define _WITH_DPRINTF
 #define _WITH_GETLINE
 #include <stdio.h>
@@ -34,6 +38,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <err.h>
 #include <dirent.h>
 #include <ctype.h>
@@ -204,6 +209,9 @@ int
 main(int argc, char **argv)
 {
 	int fd;
+#ifdef HAVE_CAPSICUM
+	cap_rights_t rights;
+#endif
 
 	if (argc != 2)
 		errx(EXIT_FAILURE, "Usage: indexinfo <infofilesdirectory>");
@@ -211,6 +219,20 @@ main(int argc, char **argv)
 	if ((fd = open(argv[1], O_RDONLY|O_DIRECTORY)) == -1)
 		err(EXIT_FAILURE, "Impossible to open %s", argv[1]);
 
+#ifdef HAVE_CAPSICUM
+	cap_rights_init(&rights, CAP_READ|CAP_WRITE);
+	if (cap_rights_limit(fd, &rights) < 0 && errno != ENOSYS) {
+		warn("cap_rights_limit() failed");
+		close(fd);
+		return (EXIT_FAILURE);
+	}
+
+	if (cap_enter() < 0 && errno != ENOSYS) {
+		warn("wap_enter() failed");
+		close(fd);
+		return (EXIT_FAILURE);
+	}
+#endif
 	parse_info_dir(fd);
 	generate_index(fd);
 
