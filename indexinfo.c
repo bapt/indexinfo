@@ -30,8 +30,6 @@
 #include <sys/capability.h>
 #endif
 
-#define _WITH_DPRINTF
-#define _WITH_GETLINE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
