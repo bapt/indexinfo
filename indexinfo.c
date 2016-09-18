@@ -27,7 +27,7 @@
 #include <sys/types.h>
 
 #ifdef HAVE_CAPSICUM
-#include <sys/capability.h>
+#include <sys/capsicum.h>
 #endif
 
 #include <stdio.h>
@@ -181,12 +181,10 @@ generate_index(fd)
 	int i;
 	int ffd;
 
-	unlinkat(fd, "dir", 0);
-
 	if (sectionlen == 0)
 		return;
 
-	if ((ffd = openat(fd, "dir", O_WRONLY|O_CREAT, 0644)) == -1)
+	if ((ffd = openat(fd, "dir", O_WRONLY|O_CREAT|O_TRUNC, 0644)) == -1)
 		err(EXIT_FAILURE, "Impossible to write the index file");
 
 	dprintf(ffd, "Produced by: "PACKAGE_NAME" "PACKAGE_VERSION".\n");
@@ -214,11 +212,11 @@ main(int argc, char **argv)
 	if (argc != 2)
 		errx(EXIT_FAILURE, "Usage: indexinfo <infofilesdirectory>");
 
-	if ((fd = open(argv[1], O_RDONLY|O_DIRECTORY)) == -1)
+	if ((fd = open(argv[1], O_DIRECTORY)) == -1)
 		err(EXIT_FAILURE, "Impossible to open %s", argv[1]);
 
 #ifdef HAVE_CAPSICUM
-	cap_rights_init(&rights, CAP_READ|CAP_WRITE);
+	cap_rights_init(&rights, CAP_READ, CAP_WRITE, CAP_FSTATFS, CAP_FSTATAT, CAP_FCNTL, CAP_CREATE, CAP_SEEK_TELL|CAP_FTRUNCATE);
 	if (cap_rights_limit(fd, &rights) < 0 && errno != ENOSYS) {
 		warn("cap_rights_limit() failed");
 		close(fd);
