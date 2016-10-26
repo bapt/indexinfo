@@ -181,8 +181,11 @@ generate_index(fd)
 	int i;
 	int ffd;
 
-	if (sectionlen == 0)
+	if (sectionlen == 0) {
+        if (unlinkat(fd, "dir", 0) == -1)
+            err(EXIT_FAILURE, "Impossible to remove empty index file");
 		return;
+    }
 
 	if ((ffd = openat(fd, "dir", O_WRONLY|O_CREAT|O_TRUNC, 0644)) == -1)
 		err(EXIT_FAILURE, "Impossible to write the index file");
@@ -216,7 +219,7 @@ main(int argc, char **argv)
 		err(EXIT_FAILURE, "Impossible to open %s", argv[1]);
 
 #ifdef HAVE_CAPSICUM
-	cap_rights_init(&rights, CAP_READ, CAP_WRITE, CAP_FSTATFS, CAP_FSTATAT, CAP_FCNTL, CAP_CREATE, CAP_SEEK_TELL|CAP_FTRUNCATE);
+	cap_rights_init(&rights, CAP_READ, CAP_WRITE, CAP_FSTATFS, CAP_FSTATAT, CAP_FCNTL, CAP_CREATE, CAP_SEEK_TELL|CAP_FTRUNCATE, CAP_UNLINKAT);
 	if (cap_rights_limit(fd, &rights) < 0 && errno != ENOSYS) {
 		warn("cap_rights_limit() failed");
 		close(fd);
