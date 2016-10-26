@@ -159,7 +159,7 @@ static void
 print_section(struct section *s, int fd)
 {
 	int i;
-	
+
 	dprintf(fd, "\n%s\n", s->name);
 	for (i = 0; i < s->entrieslen; i++) {
 		dprintf(fd, "%s\n", s->entries[i]);
@@ -227,7 +227,7 @@ main(int argc, char **argv)
 	}
 
 	if (cap_enter() < 0 && errno != ENOSYS) {
-		warn("wap_enter() failed");
+		warn("cap_enter() failed");
 		close(fd);
 		return (EXIT_FAILURE);
 	}
