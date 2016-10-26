@@ -159,7 +159,7 @@ static void
 print_section(struct section *s, int fd)
 {
 	int i;
-	
+
 	dprintf(fd, "\n%s\n", s->name);
 	for (i = 0; i < s->entrieslen; i++) {
 		dprintf(fd, "%s\n", s->entries[i]);
