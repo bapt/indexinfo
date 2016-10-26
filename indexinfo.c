@@ -224,7 +224,7 @@ main(int argc, char **argv)
 	}
 
 	if (cap_enter() < 0 && errno != ENOSYS) {
-		warn("wap_enter() failed");
+		warn("cap_enter() failed");
 		close(fd);
 		return (EXIT_FAILURE);
 	}
