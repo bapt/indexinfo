@@ -181,8 +181,11 @@ generate_index(fd)
 	int i;
 	int ffd;
 
-	if (sectionlen == 0)
+	if (sectionlen == 0) {
+        if (unlinkat(fd, "dir", 0) == -1)
+            err(EXIT_FAILURE, "Impossible to remove empty index file");
 		return;
+    }
 
 	if ((ffd = openat(fd, "dir", O_WRONLY|O_CREAT|O_TRUNC, 0644)) == -1)
 		err(EXIT_FAILURE, "Impossible to write the index file");
