@@ -182,7 +182,7 @@ generate_index(fd)
 	int ffd;
 
 	if (sectionlen == 0) {
-        if (unlinkat(fd, "dir", 0) == -1)
+        if (unlinkat(fd, "dir", 0) == -1 && errno != ENOENT)
             err(EXIT_FAILURE, "Impossible to remove empty index file");
 		return;
     }
