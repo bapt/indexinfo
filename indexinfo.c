@@ -219,7 +219,7 @@ main(int argc, char **argv)
 		err(EXIT_FAILURE, "Impossible to open %s", argv[1]);
 
 #ifdef HAVE_CAPSICUM
-	cap_rights_init(&rights, CAP_READ, CAP_WRITE, CAP_FSTATFS, CAP_FSTATAT, CAP_FCNTL, CAP_CREATE, CAP_SEEK_TELL|CAP_FTRUNCATE);
+	cap_rights_init(&rights, CAP_READ, CAP_WRITE, CAP_FSTATFS, CAP_FSTATAT, CAP_FCNTL, CAP_CREATE, CAP_SEEK_TELL|CAP_FTRUNCATE, CAP_UNLINKAT);
 	if (cap_rights_limit(fd, &rights) < 0 && errno != ENOSYS) {
 		warn("cap_rights_limit() failed");
 		close(fd);
