@@ -176,7 +176,7 @@ const char msg[] = ""
 "  \"mXXX<Return>\" visits the XXX manual, etc.\n";
 
 static void
-generate_index(fd)
+generate_index(int fd)
 {
 	int i;
 	int ffd;
