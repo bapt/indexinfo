@@ -41,6 +41,12 @@
 #include <dirent.h>
 #include <ctype.h>
 
+#if defined __FreeBSD__ || defined __DragonFly__
+#define reallocate reallocf
+#else
+#define reallocate realloc
+#endif
+
 struct section {
 	char *name;
 	char **entries;
@@ -94,7 +100,7 @@ parse_info_file(int fd)
 
 				if (sectionlen + 1 > sectioncap) {
 					sectioncap += 100;
-					sections = reallocf(sections, sectioncap * sizeof(struct sections **));
+					sections = reallocate(sections, sectioncap * sizeof(struct sections **));
 				}
 
 				sections[sectionlen++] = s;
@@ -112,7 +118,7 @@ parse_info_file(int fd)
 		if (entries && *line == '*' && s != NULL) {
 			if (s->entrieslen + 1 > s->entriescap) {
 				s->entriescap += 100;
-				s->entries = reallocf(s->entries, s->entriescap * sizeof(char **));
+				s->entries = reallocate(s->entries, s->entriescap * sizeof(char **));
 			}
 			s->entries[s->entrieslen++] = strdup(line);
 		}
@@ -176,7 +182,7 @@ const char msg[] = ""
 "  \"mXXX<Return>\" visits the XXX manual, etc.\n";
 
 static void
-generate_index(fd)
+generate_index(int fd)
 {
 	int i;
 	int ffd;
