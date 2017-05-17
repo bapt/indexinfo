@@ -142,8 +142,13 @@ parse_info_dir(int fd)
 		err(EXIT_FAILURE, "Impossible to open directory");
 
 	while ((dp = readdir(d)) != NULL) {
+#ifdef __linux__
+		if (_D_EXACT_NAMLEN(dp) < 5)
+			continue;
+#else
 		if (dp->d_namlen < 5)
 			continue;
+#endif
 		if ((ext = strrchr(dp->d_name, '.')) == NULL)
 			continue;
 		if (strcmp(ext, ".info") != 0)
