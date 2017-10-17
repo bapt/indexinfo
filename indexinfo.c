@@ -28,6 +28,7 @@
 
 #ifdef HAVE_CAPSICUM
 #include <sys/capsicum.h>
+#include <nl_types.h>
 #endif
 
 #include <zlib.h>
@@ -304,6 +305,7 @@ main(int argc, char **argv)
 		return (EXIT_FAILURE);
 	}
 
+	catopen("libc", NL_CAT_LOCALE);
 	if (cap_enter() < 0 && errno != ENOSYS) {
 		warn("cap_enter() failed");
 		close(fd);
