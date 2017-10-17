@@ -12,7 +12,7 @@ CFLAGS+=	-DPACKAGE_NAME=\"${PACKAGE_NAME}\" \
 all: indexinfo
 
 indexinfo: ${OBJS}
-	${CC} ${OBJS} ${LDFLAGS} -o $@
+	${CC} ${OBJS} ${LDFLAGS} -lz -o $@
 
 install: indexinfo
 	install -m 755 indexinfo ${DESTDIR}${PREFIX}/bin

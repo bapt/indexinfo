@@ -30,11 +30,13 @@
 #include <sys/capsicum.h>
 #endif
 
+#include <zlib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
+#include <fnmatch.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <err.h>
@@ -58,74 +60,142 @@ struct section **sections = NULL;
 size_t sectioncap = 0;
 ssize_t sectionlen = 0;
 
+static ssize_t
+gzgetline(char ** restrict linep, size_t *restrict linecapp,
+    gzFile restrict stream)
+{
+	char *buf = *linep;
+	ssize_t len;
+	size_t offset = 0;
+	int status;
+
+	if (buf != NULL) {
+		len = *linecapp;
+	} else {
+		len = 100;
+		buf = calloc(len, sizeof(char *));
+		if (buf == NULL)
+			return (-1);
+	}
+
+	for (;;) {
+		if (! gzgets(stream, buf + offset, len - offset)) {
+			status = 0;
+			gzerror(stream, &status);
+			if (status == Z_OK)
+				goto ok;
+			/* meh error */
+			return (-1);
+		}
+
+		offset += strlen(buf + offset);
+
+		if (buf[offset - 1] == '\n')
+			goto ok;
+
+		len *= 2;
+		buf = reallocate(buf, len * sizeof(char *));
+		if (buf == NULL)
+			return (-1);
+	}
+
+ok:
+	*linep = buf;
+	*linecapp = len;
+
+	return (offset);
+}
+
+static bool
+do_parse(char *line, size_t linelen, struct section **s, bool *entries)
+{
+	const char *walk;
+	int i;
+
+	if (line[linelen - 1] == '\n')
+		line[linelen - 1 ] = '\0';
+
+	if (*line == '\037')
+		return (false);
+
+	if (strncmp(line, "INFO-DIR-SECTION ", 17) == 0) {
+		*s = NULL;
+		walk = line;
+		walk+=17;
+		while (isspace(*walk))
+			walk++;
+		for (i = 0; i < sectionlen; i++) {
+			if (strcmp(walk, sections[i]->name) == 0) {
+				*s = sections[i];
+			}
+		}
+
+		if (*s == NULL) {
+			*s = calloc(1, sizeof(struct section));
+			(*s)->name = strdup(walk);
+
+			if (sectionlen + 1 > sectioncap) {
+				sectioncap += 100;
+				sections = reallocate(sections,
+				    sectioncap * sizeof(struct sections **));
+			}
+
+			sections[sectionlen++] = *s;
+		}
+	}
+
+	if (strcmp(line, "START-INFO-DIR-ENTRY") == 0) {
+		*entries = true;
+	}
+
+	if (strcmp(line, "END-INFO-DIR-ENTRY") == 0) {
+		*entries = false;
+	}
+
+	if (*entries && *line == '*' && s != NULL) {
+		if ((*s)->entrieslen + 1 > (*s)->entriescap) {
+			(*s)->entriescap += 100;
+			(*s)->entries = reallocate((*s)->entries,
+			    (*s)->entriescap * sizeof(char **));
+		}
+		(*s)->entries[(*s)->entrieslen++] = strdup(line);
+	}
+	return (true);
+}
+
 static void
-parse_info_file(int fd)
+parse_info_file(int fd, bool gzip)
 {
 	FILE *fp;
+	gzFile zfp;
 	char *line = NULL;
-	const char *walk;
 	size_t linecap = 0;
 	ssize_t linelen;
 	struct section *s = NULL;
-	bool entries = false;
-	int i;
+	bool entries;
 
-	if ((fp = fdopen(fd, "r")) == NULL) {
-		warn("Impossible to read info file");
-		return;
+	if (gzip) {
+		if ((zfp = gzdopen(fd, "r")) == NULL) {
+			warn("Impossible to read info file");
+			return;
+		}
+		while ((linelen = gzgetline(&line, &linecap, zfp)) > 0) {
+			if (!do_parse(line, linelen, &s, &entries))
+				break;
+		}
+		gzclose(zfp);
+	} else {
+		if ((fp = fdopen(fd, "r")) == NULL) {
+			warn("Impossible to read info file");
+			return;
+		}
+		while ((linelen = getline(&line, &linecap, fp)) > 0) {
+			if (!do_parse(line, linelen, &s, &entries))
+				break;
+		}
+		fclose(fp);
 	}
-
-	while ((linelen = getline(&line, &linecap, fp)) > 0) {
-		if (line[linelen - 1] == '\n')
-			line[linelen - 1 ] = '\0';
-
-		if (*line == '\037')
-			break;
-
-		if (strncmp(line, "INFO-DIR-SECTION ", 17) == 0) {
-			s = NULL;
-			walk = line;
-			walk+=17;
-			while (isspace(*walk))
-				walk++;
-			for (i = 0; i < sectionlen; i++) {
-				if (strcmp(walk, sections[i]->name) == 0) {
-					s = sections[i];
-				}
-			}
-
-			if (s == NULL) {
-				s = calloc(1, sizeof(struct section));
-				s->name = strdup(walk);
-
-				if (sectionlen + 1 > sectioncap) {
-					sectioncap += 100;
-					sections = reallocate(sections, sectioncap * sizeof(struct sections **));
-				}
-
-				sections[sectionlen++] = s;
-			}
-		}
-
-		if (strcmp(line, "START-INFO-DIR-ENTRY") == 0) {
-			entries = true;
-		}
-
-		if (strcmp(line, "END-INFO-DIR-ENTRY") == 0) {
-			entries = false;
-		}
-
-		if (entries && *line == '*' && s != NULL) {
-			if (s->entrieslen + 1 > s->entriescap) {
-				s->entriescap += 100;
-				s->entries = reallocate(s->entries, s->entriescap * sizeof(char **));
-			}
-			s->entries[s->entrieslen++] = strdup(line);
-		}
-	}
-
 	free(line);
-	fclose(fp);
 
 	return;
 }
@@ -137,6 +207,7 @@ parse_info_dir(int fd)
 	struct dirent *dp;
 	const char *ext;
 	int ffd;
+	bool gzip;
 
 	if ((d = fdopendir(dup(fd))) == NULL)
 		err(EXIT_FAILURE, "Impossible to open directory");
@@ -149,17 +220,19 @@ parse_info_dir(int fd)
 		if (dp->d_namlen < 5)
 			continue;
 #endif
-		if ((ext = strrchr(dp->d_name, '.')) == NULL)
-			continue;
-		if (strcmp(ext, ".info") != 0)
-			continue;
+		gzip = false;
+		if (fnmatch("*.info", dp->d_name, 0) == FNM_NOMATCH) {
+			if (fnmatch("*.info.gz", dp->d_name, 0) == FNM_NOMATCH)
+				continue;
+			gzip = true;
+		}
 
 		if ((ffd = openat(fd, dp->d_name, O_RDONLY)) == -1) {
 			warn("Skipping: %s", dp->d_name);
 			continue;
 		}
 
-		parse_info_file(ffd);
+		parse_info_file(ffd, gzip);
 		close (ffd);
 	}
 
