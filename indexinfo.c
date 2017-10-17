@@ -43,12 +43,6 @@
 #include <dirent.h>
 #include <ctype.h>
 
-#if defined __FreeBSD__ || defined __DragonFly__
-#define reallocate reallocf
-#else
-#define reallocate realloc
-#endif
-
 struct section {
 	char *name;
 	char **entries;
@@ -94,7 +88,7 @@ gzgetline(char ** restrict linep, size_t *restrict linecapp,
 			goto ok;
 
 		len *= 2;
-		buf = reallocate(buf, len * sizeof(char *));
+		buf = realloc(buf, len * sizeof(char *));
 		if (buf == NULL)
 			return (-1);
 	}
@@ -136,7 +130,7 @@ do_parse(char *line, size_t linelen, struct section **s, bool *entries)
 
 			if (sectionlen + 1 > sectioncap) {
 				sectioncap += 100;
-				sections = reallocate(sections,
+				sections = realloc(sections,
 				    sectioncap * sizeof(struct sections **));
 			}
 
@@ -155,7 +149,7 @@ do_parse(char *line, size_t linelen, struct section **s, bool *entries)
 	if (*entries && *line == '*' && s != NULL) {
 		if ((*s)->entrieslen + 1 > (*s)->entriescap) {
 			(*s)->entriescap += 100;
-			(*s)->entries = reallocate((*s)->entries,
+			(*s)->entries = realloc((*s)->entries,
 			    (*s)->entriescap * sizeof(char **));
 		}
 		(*s)->entries[(*s)->entrieslen++] = strdup(line);
