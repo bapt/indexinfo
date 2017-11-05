@@ -147,7 +147,7 @@ do_parse(char *line, size_t linelen, struct section **s, bool *entries)
 		*entries = false;
 	}
 
-	if (*entries && *line == '*' && s != NULL) {
+	if (*entries && *line == '*' && *s != NULL) {
 		if ((*s)->entrieslen + 1 > (*s)->entriescap) {
 			(*s)->entriescap += 100;
 			(*s)->entries = realloc((*s)->entries,
